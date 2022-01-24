@@ -5,8 +5,8 @@
 </template>
 
 <script lang="ts">
-import LoginForm, { FormData } from '@/components/login/LoginForm.vue'
 import { defineComponent } from 'vue'
+import LoginForm, { FormData } from '@/components/login/LoginForm.vue'
 
 export default defineComponent({
   components: {
