@@ -5,17 +5,17 @@
 </template>
 
 <script lang="ts">
+import { Credentials } from '@/db'
+import LoginForm from '@/components/login/LoginForm.vue'
 import { defineComponent } from 'vue'
-import LoginForm, { FormData } from '@/components/login/LoginForm.vue'
 
 export default defineComponent({
   components: {
     LoginForm,
   },
   methods: {
-    async login(data: FormData): Promise<void> {
-      console.log(data)
-      return
+    async login(creds: Credentials): Promise<void> {
+      console.log(creds)
     }
   }
 })

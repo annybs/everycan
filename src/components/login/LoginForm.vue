@@ -1,27 +1,30 @@
 <template>
   <form class="login-form" :class="{'has-error': !this.submitError}" @submit.prevent="submit">
-    <div class="input storage-type">
-      <label for="storage-type">Storage type</label>
+    <div class="input db-type">
+      <label for="db-type">Database type</label>
       <select
-        id="storage-type"
-        name="storage-type"
-        v-model="v$.storageType.$model"
+        id="db-type"
+        name="db-type"
+        v-model="v$.dbType.$model"
       >
-        <option value="local" :selected="!useServer">Local</option>
-        <option value="server" :selected="useServer">Server</option>
+        <option
+          v-for="(label, id) in dbTypes"
+          :key="id"
+          :value="id"
+        >{{label}}</option>
       </select>
-      <div class="error" v-for="error of v$.storageType.$errors" :key="error.$uid">{{error.$message}}</div>
+      <div class="error" v-for="error of v$.dbType.$errors" :key="error.$uid">{{error.$message}}</div>
     </div>
-    <div class="input server-address" :class="{'has-error': v$.serverAddress.$error}" v-if="useServer">
-      <label for="server-address">Server address</label>
+    <div class="input db-address" :class="{'has-error': v$.dbAddress.$error}" v-if="dbType === 'http'">
+      <label for="db-address">Server address</label>
       <input
-        id="server-address"
-        name="server-address"
+        id="db-address"
+        name="db-address"
         placeholder="Server address"
         type="text"
-        v-model="v$.serverAddress.$model"
+        v-model="v$.dbAddress.$model"
       />
-      <div class="error" v-for="error of v$.serverAddress.$errors" :key="error.$uid">{{error.$message}}</div>
+      <div class="error" v-for="error of v$.dbAddress.$errors" :key="error.$uid">{{error.$message}}</div>
     </div>
     <div class="input username" :class="{'has-error': v$.username.$error}">
       <label for="username">Username</label>
@@ -55,22 +58,12 @@
 <script lang="ts">
 import { url } from '@/validation'
 import useVuelidate from '@vuelidate/core'
+import { Credentials, DatabaseType, dbTypes } from '@/db'
 import { Prop, defineComponent } from 'vue'
 import { helpers, required } from '@vuelidate/validators'
 
-export type FormData = {
-  storageType: StorageType
-  serverAddress?: string
-  username: string
-  password: string
-}
-
-type StorageType = 'local' | 'server'
-
 // eslint-disable-next-line no-unused-vars
-export type SubmitCallback = (data: FormData) => Promise<void>
-
-const storageTypes: StorageType[] = ['local', 'server']
+export type SubmitCallback = (creds: Credentials) => Promise<void>
 
 export default defineComponent({
   props: {
@@ -78,8 +71,8 @@ export default defineComponent({
   },
   data() {
     return {
-      storageType: 'local' as StorageType,
-      serverAddress: '',
+      dbType: 'local' as DatabaseType,
+      dbAddress: '',
       username: '',
       password: '',
       submitError: null as (Error | null)
@@ -87,13 +80,16 @@ export default defineComponent({
   },
   validations() {
     return {
-      storageType: [
-        helpers.withMessage<StorageType>('Invalid storage type.', v => storageTypes.includes(v))
+      dbType: [
+        helpers.withMessage<DatabaseType>('Invalid storage type.', v => Object.keys(dbTypes).includes(v))
       ],
-      serverAddress: [
+      dbAddress: [
         helpers.withParams(
-          { useServer: this.useServer },
-          helpers.withMessage<string>('Invalid server address.', v => this.useServer ? url(v) : true)
+          { dbType: this.dbType },
+          helpers.withMessage<string>('Invalid server address.', v => {
+            if (this.dbType === 'http') return url(v)
+            return true
+          })
         )
       ],
       username: [
@@ -105,15 +101,15 @@ export default defineComponent({
     }
   },
   computed: {
-    useServer() {
-      return this.storageType === 'server'
+    dbTypes() {
+      return dbTypes
     }
   },
   methods: {
-    collect(): FormData {
+    collect(): Credentials {
       return {
-        storageType: this.storageType,
-        serverAddress: this.useServer ? this.serverAddress : undefined,
+        dbType: this.dbType,
+        dbAddress: this.dbType === 'http' ? this.dbAddress : undefined,
         username: this.username,
         password: this.password
       }
